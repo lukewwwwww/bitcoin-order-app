@@ -78,3 +78,12 @@ jobs:
       - name: Deploy
         run: |
           npm run deploy
+      - name: delete branch
+        run: |
+          git push origin :feature-branch
+      - name: lint
+        run: |
+          ng lint
+      - name: Audit 
+        run: |
+          npm audit fix
