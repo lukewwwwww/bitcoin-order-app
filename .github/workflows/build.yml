@@ -12,13 +12,17 @@ jobs:
         node-version: [16.x]
 
     steps:
+      # 检出代码仓库,从GitHub仓库中获取项目的最新代码，并将其下载到GitHub Actions运行的虚拟机环境中。
       - uses: actions/checkout@v2
+      # 安装Chrome浏览器
       - uses: browser-actions/setup-chrome@latest
+      # 设置Node.js
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
 
+      # 缓存node_modules
       - name: Cache node modules
         id: cache-nodemodules
         uses: actions/cache@v2
@@ -32,22 +36,27 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+      # 安装依赖：如果缓存未命中（即未找到缓存），则运行npm ci --force来强制安装所有依赖项。
       - name: Install Dependencies
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: |
           npm ci --force
+      # 构建项目
       - name: Build
         run: |
           npm run build --force
+      # 代码检查
       - name: Lint
         run: |
           npm run lint
+      # 更新类型定义
       - name: Update types to latest
         run: |
           npm install --save-dev @types/node@latest --force
       #- name: Test
       #  run: |
       #    npm run test --watch=false --browsers=ChromeHeadless
+      # 生成规范化的变更日志
       - name: Conventional Changelog Action
         id: changelog
         uses: TriPSs/conventional-changelog-action@v3
@@ -55,6 +64,7 @@ jobs:
           github-token: ${{ secrets.WORKSHOP6_GITHUB_TOKEN }}
           output-file: "false"
 
+      # 创建发布版本
       - name: Create Release
         uses: actions/create-release@v1
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
@@ -64,6 +74,7 @@ jobs:
           tag_name: ${{ steps.changelog.outputs.tag }}
           release_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
+      # 部署
       - name: Deploy
         run: |
           npm run deploy
